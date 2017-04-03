@@ -1,0 +1,42 @@
+import numpy as np
+import pandas as pd
+df = pd.read_csv('train.csv')
+df.dropna(inplace=True)
+X = df.drop(['Outcome','ID','Stock_ID','timestamp'],axis=1).values
+y = df['Outcome'].values
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2,random_state=42 ,stratify=y)
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import Imputer
+#b = StandardScaler()
+
+#X2_train = b.fit_transform(X_train)
+#X2_test = b.fit_transform(X_test)
+
+steps = [('pca', PCA()),('logistic_regression', LogisticRegression())]
+
+pipeline = Pipeline(steps)
+pipeline.fit(X_train, y_train)
+c2 = pipeline.score(X_test,y_test)
+
+print c2
+
+df2 = pd.read_csv('test.csv')
+df23 = df2.drop(['ID','Stock_ID','timestamp'],axis=1).fillna(0)
+df23 = df23.values
+labels = pipeline.predict(df23)
+data22 = {'ID': df2.ID.values,'Outcome':labels}
+tocsv = pd.DataFrame(data = data22)
+print tocsv
+
+tocsv.to_csv('submission_LR.csv')
+
+from sklearn.ensemble import VotingClassifier
+eclf1 = VotingClassifier(estimators=[('lr', pipeline), ('rf', pipeline2)], voting='hard')
+eclf1.fit(X_train,y_train)
